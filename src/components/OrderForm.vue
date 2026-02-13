@@ -68,50 +68,51 @@ export default {
       return this.selectedProduct ? this.selectedProduct.price * this.quantity : 0;
     }
   },
-  methods: {
-    async fetchProducts() {
-      try {
-        const response = await fetch('http://40.64.126.150:3030/products');
-        if (response.ok) {
-          this.products = await response.json();
-        } else {
-          alert('Failed to fetch products.');
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
+ methods: {
+  async fetchProducts() {
+    try {
+      const response = await fetch(`${process.env.VUE_APP_PRODUCT_SERVICE_URL}/products`);
+      if (response.ok) {
+        this.products = await response.json();
+      } else {
         alert('Failed to fetch products.');
       }
-    },
-    async submitOrder() {
-      if (!this.selectedProduct || this.quantity <= 0) {
-        alert('Please select a product and enter a valid quantity.');
-        return;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      alert('Failed to fetch products.');
+    }
+  },
+
+  async submitOrder() {
+    if (!this.selectedProduct || this.quantity <= 0) {
+      alert('Please select a product and enter a valid quantity.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.VUE_APP_ORDER_SERVICE_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product: this.selectedProduct,
+          quantity: this.quantity,
+          totalPrice: this.totalPrice,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
       }
 
-      try {
-        const response = await fetch('http://40.64.126.150:3000/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            product: this.selectedProduct,
-            quantity: this.quantity,
-            totalPrice: this.totalPrice,  // Send the total price as well
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
-        }
-
-        alert(`Order for ${this.quantity} x ${this.selectedProduct.name} placed successfully! Total: $${this.totalPrice.toFixed(2)}`);
-      } catch (error) {
-        console.error('Error placing order:', error);
-        alert('Failed to place order.');
-      }
+      alert(`Order placed! Total: $${this.totalPrice.toFixed(2)}`);
+    } catch (error) {
+      console.error('Error placing order:', error);
+      alert('Failed to place order.');
     }
   }
+}
 };
 </script>
 
